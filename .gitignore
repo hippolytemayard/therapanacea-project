@@ -1,7 +1,8 @@
 # Folders
-train_img/
-val_img/
+**/train_img/
+**/val_img/
+**/__pycache__/
 
 # Files
-*.jpg
-*.txt
+/*.jpg
+/*.txt
