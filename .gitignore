@@ -1,7 +1,7 @@
 # Folders
-train_img/
-val_img/
+**/train_img/
+**/val_img/
 
 # Files
-*.jpg
-*.txt
+/*.jpg
+/*.txt
