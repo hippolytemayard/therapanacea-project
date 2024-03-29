@@ -19,7 +19,7 @@ class ClassificationDataset(Dataset):
         self.transforms = transforms
 
     def __len__(self):
-        return len(self.img_labels)
+        return len(self.images_labels)
 
     def __getitem__(self, idx) -> Tuple[torch.Tensor, int]:
         image = read_image(str(self.images_list[idx]))

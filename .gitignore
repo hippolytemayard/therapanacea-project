@@ -1,6 +1,7 @@
 # Folders
 **/train_img/
 **/val_img/
+**/__pycache__/
 
 # Files
 /*.jpg
