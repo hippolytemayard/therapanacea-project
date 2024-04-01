@@ -52,9 +52,12 @@ if __name__ == "__main__":
     )
     labels = [int(label) for label in labels]
 
+    batch_size = 4
+
     train_loader, val_loader = get_train_val_dataloaders(
         images_list=images_list,
         labels=labels,
+        batch_size=batch_size,
         train_transforms=train_transforms,
         val_transforms=val_transforms,
     )
@@ -98,9 +101,10 @@ if __name__ == "__main__":
         # )
         validation_loop(
             model=model,
-            train_loader=val_loader,
+            loader=val_loader,
             epoch=epoch,
             criterion=criterion,
+            metrics_collection=metrics_collection,
             step="Validation",
             writer=writer,
             device=device,

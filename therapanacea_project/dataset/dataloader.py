@@ -14,6 +14,7 @@ from therapanacea_project.dataset.classification_dataset import (
 def get_train_val_dataloaders(
     images_list: list,
     labels: list,
+    batch_size: int,
     train_transforms,
     val_transforms,
     val_size: float = 0.25,
@@ -31,13 +32,13 @@ def get_train_val_dataloaders(
         images_list=train_images,
         labels=train_labels,
         transform=train_transforms,
-        batch_size=4,
+        batch_size=batch_size,
     )
     val_loader = get_single_dataloader(
         images_list=val_images,
         labels=val_labels,
         transform=val_transforms,
-        batch_size=4,
+        batch_size=batch_size,
     )
 
     return train_loader, val_loader

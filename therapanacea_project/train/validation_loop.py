@@ -55,3 +55,5 @@ def validation_loop(
         if writer is not None:
             for k, v in metrics.items():
                 writer.add_scalar(f"{k}", v.detach().cpu().item(), epoch)
+
+        metrics_collection.reset()
