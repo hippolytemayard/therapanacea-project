@@ -16,22 +16,21 @@ def validation_loop(
     device="cpu",
 ):
 
-    # Passer le modèle en mode eval
     model.eval()
-    # initialiser les valeurs de loss et de prediction correctes
+
     val_loss, correct = 0, 0
 
     for batch_idx, (data, target) in enumerate(loader):
         data = data.to(device)
-        target = target.to(device)
+        target = target.to(device, torch.float)
 
         output = model(data)
+        prediction = torch.sigmoid(output).squeeze(1)
 
-        val_loss += criterion(output, target).data.item()
+        val_loss += criterion(prediction, target).data.item()
 
         if metrics_collection is not None:
-            prediction = torch.sigmoid(output)
-            batch_metrics = metrics_collection(prediction, target)
+            metrics_collection(prediction, target)
 
         correct += prediction.eq(target.data).cpu().sum()
 
