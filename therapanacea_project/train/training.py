@@ -77,25 +77,25 @@ if __name__ == "__main__":
         logging.info(f"EPOCH {epoch}")
         print(f"epoch : {epoch}")
 
-        # training_loop(
-        #    model=model,
-        #    loader=train_loader,
-        #    criterion=criterion,
-        #    epoch=epoch,
-        #    optimizer=optimizer,
-        #    writer=writer,
-        #    device=device,
-        # )
-
-        validation_loop(
+        training_loop(
             model=model,
             loader=train_loader,
-            epoch=epoch,
             criterion=criterion,
-            step="Validation",
+            epoch=epoch,
+            optimizer=optimizer,
             writer=writer,
             device=device,
         )
+
+        # validation_loop(
+        #    model=model,
+        #    loader=train_loader,
+        #    epoch=epoch,
+        #    criterion=criterion,
+        #    step="Validation",
+        #    writer=writer,
+        #    device=device,
+        # )
         validation_loop(
             model=model,
             train_loader=val_loader,
