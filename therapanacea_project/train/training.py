@@ -29,7 +29,7 @@ def train_model_from_config(
 ):
     save_model_path = (
         Path(config.TRAINING.PATH_MODEL)
-        / f"best_model_exp_{config.TRAINING.PATH_MODEL}"
+        / f"best_model_exp_{config.EXPERIMENT}.pt"
     )
 
     writer = (
@@ -92,7 +92,6 @@ def train_model_from_config(
     for epoch in range(1, config.TRAINING.EPOCHS + 1):
 
         logging.info(f"EPOCH {epoch}")
-
         training_loop(
             model=model,
             loader=train_loader,
@@ -115,10 +114,11 @@ def train_model_from_config(
         )
 
         fpr, tpr, thresholds = dict_metrics["BinaryROC"]
-        hter = (fpr + tpr) / 2
+        fnr = 1 - tpr
+        hter = (fpr + fnr) / 2
 
         if hter < best_hter:
-            logging(
+            logging.info(
                 f"Validation | model improved from {best_hter} to {hter} | saving model"
             )
             best_hter = hter
@@ -126,9 +126,7 @@ def train_model_from_config(
                 "epoch": epoch,
                 "model": model.state_dict(),
                 "opt": optimizer.state_dict(),
-                "val_metrics": {
-                    k: v.detach().cpu().item() for k, v in dict_metrics.items()
-                },
+                "val_metrics": {"fpr": fpr, "fnr": fnr, "hter": hter},
             }
             torch.save(save_dict, save_model_path)
 
@@ -144,6 +142,7 @@ if __name__ == "__main__":
     config = load_yaml(config_path)
 
     make_exists(config.TRAINING.PATH_MODEL)
+    make_exists(config.TRAINING.TENSORBOARD_DIR)
 
     device = "mps" if torch.backends.mps.is_available() else "cpu"
     logging.info(f"device : {device}")

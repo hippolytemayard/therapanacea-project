@@ -23,7 +23,7 @@ def validation_loop(
 
     for batch_idx, (data, target) in enumerate(loader):
         data = data.to(device)
-        target = target.to(device)  # , torch.float)
+        target = target.to(device, torch.float)
 
         output = model(data)
         prediction = torch.sigmoid(output).squeeze(1)
@@ -31,7 +31,7 @@ def validation_loop(
         val_loss += criterion(prediction, target).data.item()
 
         if metrics_collection is not None:
-            metrics_collection(prediction, target)
+            metrics_collection(prediction, target.long())
 
     val_loss /= len(loader)
 
@@ -44,12 +44,27 @@ def validation_loop(
         metrics = metrics_collection.compute()
 
         for k, v in metrics.items():
-            logging.info(f"Validation | {k} = {v.detach().cpu().item()}")
+            if k == "BinaryROC":
+                fpr, tpr, _ = v
+                fnr = 1 - tpr
+                logging.info(f"Validation | fpr = {fpr.detach().cpu().item()}")
+                logging.info(f"Validation | fnr = {fnr.detach().cpu().item()}")
 
-            if writer is not None:
-                writer.add_scalar(
-                    f"Validation {k}", v.detach().cpu().item(), epoch
-                )
+                if writer is not None:
+                    writer.add_scalar(
+                        "Validation fpr", fpr.detach().cpu().item(), epoch
+                    )
+                    writer.add_scalar(
+                        "Validation fnr", fnr.detach().cpu().item(), epoch
+                    )
+
+            else:
+                logging.info(f"Validation | {k} = {v.detach().cpu().item()}")
+
+                if writer is not None:
+                    writer.add_scalar(
+                        f"Validation {k}", v.detach().cpu().item(), epoch
+                    )
 
         metrics_collection.reset()
 
