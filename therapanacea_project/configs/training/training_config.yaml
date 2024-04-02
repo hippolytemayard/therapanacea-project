@@ -1,0 +1,26 @@
+EXPERIMENT: 1
+TRAINING:
+  EPOCHS: 60
+  BACKBONE: "resnet-18"
+  BATCH_SIZE: 32
+  LEARNING_RATE:  0.01
+  EVALUATION_FREQUENCY: 1
+  PRINT_FREQ: 1000
+  PATH_MODEL : "/Users/hippolyte/Documents/candidatures/thera/therapanacea-project/saved_models"
+  ENABLE_TENSORBOARD : TRUE
+  TENSORBOARD_DIR: "/Users/hippolyte/Documents/candidatures/thera/therapanacea-project/experiments"
+
+  DATASET: 
+    PATH_LABELS : ./data/label_train.txt
+    IMAGES_DIR : ./data/train_img/
+    VALIDATION_SPLIT: 0.25
+    RANDOM_SEED: 42
+
+
+
+METRICS: ["accuracy", "f1", "precision", "recall"]
+
+
+
+
+

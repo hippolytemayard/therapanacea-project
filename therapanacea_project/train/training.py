@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 
+import torch
+from omegaconf import OmegaConf
 from torch import nn, optim
 from torch.utils.tensorboard import SummaryWriter
 from torchmetrics import MetricCollection
@@ -8,26 +10,35 @@ from torchmetrics.classification import (
     BinaryAccuracy,
     BinaryPrecision,
     BinaryRecall,
+    BinaryROC,
+    BinarySpecificity,
 )
 from torchvision import transforms
 
-from therapanacea_project.dataset.dataloader import (
-    get_train_val_dataloaders,
-)
+from therapanacea_project.dataset.dataloader import get_train_val_dataloaders
 from therapanacea_project.models.resnet18 import get_resnet18_architecture
 from therapanacea_project.train.training_loop import training_loop
 from therapanacea_project.train.validation_loop import validation_loop
+from therapanacea_project.utils.files import load_yaml, make_exists
 from therapanacea_project.utils.io import read_txt_object
 
-if __name__ == "__main__":
-    writer = SummaryWriter("./experiments/")
-    device = "cpu"
 
-    model = get_resnet18_architecture()
-    model = model.to(device)
+def train_model_from_config(
+    config: OmegaConf,
+    device: torch.device,
+):
+    save_model_path = (
+        Path(config.TRAINING.PATH_MODEL)
+        / f"best_model_exp_{config.TRAINING.PATH_MODEL}"
+    )
 
-    loss_training, acc_training = [], []
-    loss_validation, acc_validation = [], []
+    writer = (
+        SummaryWriter(config.TRAINING.TENSORBOARD_DIR)
+        if config.TRAINING.ENABLE_TENSORBOARD
+        else None
+    )
+
+    model = get_resnet18_architecture().to(device)
 
     train_transforms = transforms.Compose(
         [
@@ -43,8 +54,8 @@ if __name__ == "__main__":
         ]
     )
 
-    path_train_label = Path("./data/label_train.txt")
-    images_list = Path("./data/train_img/").glob("*.jpg")
+    path_train_label = Path(config.TRAINING.DATASET.PATH_LABELS)
+    images_list = Path(config.TRAINING.DATASET.IMAGES_DIR).glob("*.jpg")
     images_list = sorted(list(images_list))
 
     labels = read_txt_object(
@@ -52,60 +63,89 @@ if __name__ == "__main__":
     )
     labels = [int(label) for label in labels]
 
-    batch_size = 4
-
     train_loader, val_loader = get_train_val_dataloaders(
         images_list=images_list,
         labels=labels,
-        batch_size=batch_size,
+        batch_size=config.TRAINING.BATCH_SIZE,
         train_transforms=train_transforms,
         val_transforms=val_transforms,
+        val_size=config.TRAINING.DATASET.VALIDATION_SPLIT,
     )
 
-    epochs = 3
-    lr = 0.01
     criterion = nn.BCELoss()
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    optimizer = optim.SGD(
+        model.parameters(), lr=config.TRAINING.LEARNING_RATE, momentum=0.9
+    )
 
     metrics_collection = MetricCollection(
         [
-            BinaryAccuracy(threshold=0.5),
-            BinaryPrecision(threshold=0.5),
-            BinaryRecall(threshold=0.5),
+            # BinaryAccuracy(threshold=0.5),
+            # BinaryPrecision(threshold=0.5),
+            # BinaryRecall(threshold=0.5),
+            # BinarySpecificity(threshold=0.5),
+            BinaryROC(thresholds=[0.5]),
         ]
-    )
+    ).to(device)
 
-    for epoch in range(1, epochs + 1):
+    best_hter = 10**3
+
+    for epoch in range(1, config.TRAINING.EPOCHS + 1):
 
         logging.info(f"EPOCH {epoch}")
-        print(f"epoch : {epoch}")
 
         training_loop(
             model=model,
             loader=train_loader,
             criterion=criterion,
+            metrics_collection=metrics_collection,
             epoch=epoch,
             optimizer=optimizer,
             writer=writer,
             device=device,
         )
 
-        # validation_loop(
-        #    model=model,
-        #    loader=train_loader,
-        #    epoch=epoch,
-        #    criterion=criterion,
-        #    step="Validation",
-        #    writer=writer,
-        #    device=device,
-        # )
-        validation_loop(
+        dict_metrics = validation_loop(
             model=model,
             loader=val_loader,
             epoch=epoch,
             criterion=criterion,
             metrics_collection=metrics_collection,
-            step="Validation",
             writer=writer,
             device=device,
         )
+
+        fpr, tpr, thresholds = dict_metrics["BinaryROC"]
+        hter = (fpr + tpr) / 2
+
+        if hter < best_hter:
+            logging(
+                f"Validation | model improved from {best_hter} to {hter} | saving model"
+            )
+            best_hter = hter
+            save_dict = {
+                "epoch": epoch,
+                "model": model.state_dict(),
+                "opt": optimizer.state_dict(),
+                "val_metrics": {
+                    k: v.detach().cpu().item() for k, v in dict_metrics.items()
+                },
+            }
+            torch.save(save_dict, save_model_path)
+
+    return
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+
+    config_path = Path(
+        "therapanacea_project/configs/training/training_config.yaml"
+    )
+    config = load_yaml(config_path)
+
+    make_exists(config.TRAINING.PATH_MODEL)
+
+    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    logging.info(f"device : {device}")
+
+    train_model_from_config(config=config, device=device)

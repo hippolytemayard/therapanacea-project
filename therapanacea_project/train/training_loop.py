@@ -1,3 +1,5 @@
+import logging
+
 import torch
 from torch import nn
 from torch.optim import Optimizer
@@ -20,7 +22,7 @@ def training_loop(
 
     for batch_idx, (data, target) in enumerate(loader):
         data = data.to(device)
-        target = target.to(device, torch.float)
+        target = target.to(device)  # , torch.float)
 
         optimizer.zero_grad()
 
@@ -44,8 +46,8 @@ def training_loop(
         optimizer.step()
 
         if batch_idx % log_interval == 0:
-            print(
-                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+            logging.info(
+                "Train | Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                     epoch,
                     batch_idx * len(data),
                     len(loader.dataset),
@@ -56,10 +58,13 @@ def training_loop(
 
     if metrics_collection is not None:
         metrics = metrics_collection.compute()
-        print(metrics)
 
-        if writer is not None:
-            for k, v in metrics.items():
-                writer.add_scalar(f"{k}", v.detach().cpu().item(), epoch)
+        for k, v in metrics.items():
+            logging.info(f"Training | {k} = {v.detach().cpu().item()}")
+
+            if writer is not None:
+                writer.add_scalar(
+                    f"Training {k}", v.detach().cpu().item(), epoch
+                )
 
         metrics_collection.reset()

@@ -1,14 +1,12 @@
 from typing import Tuple
 
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from therapanacea_project.dataset.classification_dataset import (
     ClassificationDataset,
 )
-
-# from torch.utils.data.distributed import DistributedSampler
 
 
 def get_train_val_dataloaders(
