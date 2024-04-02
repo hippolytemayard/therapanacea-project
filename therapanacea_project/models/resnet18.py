@@ -1,4 +1,5 @@
-from torchvision.models import resnet18, ResNet
+from torch import nn
+from torchvision.models import ResNet, resnet18
 
 
 def get_resnet18_architecture(
@@ -6,11 +7,11 @@ def get_resnet18_architecture(
 ) -> ResNet:
 
     model = resnet18(pretrained=pretrained, progress=False)
-    from torch import nn
+
+    for param in model.parameters():
+        param.requires_grad = False
 
     if fine_tune:
-        for param in model.parameters():
-            param.requires_grad = False
 
         for param in model.layer4.parameters():
             param.requires_grad = True
