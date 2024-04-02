@@ -1,18 +1,23 @@
 EXPERIMENT: 1
+EXPERIMENT_FOLDER: "/Users/hippolyte/Documents/candidatures/thera/therapanacea-project/experiments"
+ROOT_EXPERIMENT: ${EXPERIMENT_FOLDER}/experiment_${EXPERIMENT}
 TRAINING:
   EPOCHS: 60
-  BACKBONE: "resnet-18"
-  BATCH_SIZE: 32
+  BACKBONE: "resnet18"
+  PRETRAINED: TRUE
+  FINE_TUNE: FALSE
+  BATCH_SIZE: 16
   LEARNING_RATE:  0.01
   EVALUATION_FREQUENCY: 1
   PRINT_FREQ: 1000
-  PATH_MODEL : "/Users/hippolyte/Documents/candidatures/thera/therapanacea-project/saved_models"
+  PATH_MODEL : ${..ROOT_EXPERIMENT}/saved_models
   ENABLE_TENSORBOARD : TRUE
-  TENSORBOARD_DIR: "/Users/hippolyte/Documents/candidatures/thera/therapanacea-project/experiments"
+  TENSORBOARD_DIR: ${..ROOT_EXPERIMENT}/tensorboard_logs
 
   DATASET: 
     PATH_LABELS : ./data/label_train.txt
     IMAGES_DIR : ./data/train_img/
+    N_CLASSES: 1
     VALIDATION_SPLIT: 0.25
     RANDOM_SEED: 42
 

@@ -7,6 +7,7 @@ from torch import nn, optim
 from torch.utils.tensorboard import SummaryWriter
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (
+    Accuracy,
     BinaryAccuracy,
     BinaryPrecision,
     BinaryRecall,
@@ -27,10 +28,6 @@ def train_model_from_config(
     config: OmegaConf,
     device: torch.device,
 ):
-    save_model_path = (
-        Path(config.TRAINING.PATH_MODEL)
-        / f"best_model_exp_{config.TRAINING.PATH_MODEL}"
-    )
 
     writer = (
         SummaryWriter(config.TRAINING.TENSORBOARD_DIR)
@@ -38,7 +35,16 @@ def train_model_from_config(
         else None
     )
 
-    model = get_resnet18_architecture().to(device)
+    model = get_resnet18_architecture(
+        n_classes=config.TRAINING.DATASET.N_CLASSES,
+        fine_tune=config.TRAINING.FINE_TUNE,
+        pretrained=config.TRAINING.PRETRAINED,
+    ).to(device)
+
+    trainable_params = sum(
+        p.numel() for p in model.parameters() if p.requires_grad
+    )
+    logging.info(f"The model has {trainable_params} trainable parameters")
 
     train_transforms = transforms.Compose(
         [
@@ -63,13 +69,19 @@ def train_model_from_config(
     )
     labels = [int(label) for label in labels]
 
-    train_loader, val_loader = get_train_val_dataloaders(
-        images_list=images_list,
-        labels=labels,
-        batch_size=config.TRAINING.BATCH_SIZE,
-        train_transforms=train_transforms,
-        val_transforms=val_transforms,
-        val_size=config.TRAINING.DATASET.VALIDATION_SPLIT,
+    train_loader, val_loader, train_classes_distribution = (
+        get_train_val_dataloaders(
+            images_list=images_list,
+            labels=labels,
+            batch_size=config.TRAINING.BATCH_SIZE,
+            train_transforms=train_transforms,
+            val_transforms=val_transforms,
+            val_size=config.TRAINING.DATASET.VALIDATION_SPLIT,
+        )
+    )
+
+    logging.info(
+        f"Train dataset classes distribution: {train_classes_distribution}"
     )
 
     criterion = nn.BCELoss()
@@ -79,6 +91,9 @@ def train_model_from_config(
 
     metrics_collection = MetricCollection(
         [
+            Accuracy(
+                task="multiclass", num_classes=2, average="macro"
+            ),  # balanced accuracy
             # BinaryAccuracy(threshold=0.5),
             # BinaryPrecision(threshold=0.5),
             # BinaryRecall(threshold=0.5),
@@ -92,7 +107,6 @@ def train_model_from_config(
     for epoch in range(1, config.TRAINING.EPOCHS + 1):
 
         logging.info(f"EPOCH {epoch}")
-
         training_loop(
             model=model,
             loader=train_loader,
@@ -115,10 +129,11 @@ def train_model_from_config(
         )
 
         fpr, tpr, thresholds = dict_metrics["BinaryROC"]
-        hter = (fpr + tpr) / 2
+        fnr = 1 - tpr
+        hter = (fpr + fnr) / 2
 
         if hter < best_hter:
-            logging(
+            logging.info(
                 f"Validation | model improved from {best_hter} to {hter} | saving model"
             )
             best_hter = hter
@@ -126,11 +141,11 @@ def train_model_from_config(
                 "epoch": epoch,
                 "model": model.state_dict(),
                 "opt": optimizer.state_dict(),
-                "val_metrics": {
-                    k: v.detach().cpu().item() for k, v in dict_metrics.items()
-                },
+                "val_metrics": {"fpr": fpr, "fnr": fnr, "hter": hter},
             }
-            torch.save(save_dict, save_model_path)
+            torch.save(
+                save_dict, Path(config.TRAINING.PATH_MODEL) / "best_model.pt"
+            )
 
     return
 
@@ -143,7 +158,10 @@ if __name__ == "__main__":
     )
     config = load_yaml(config_path)
 
+    make_exists(config.EXPERIMENT_FOLDER)
+    make_exists(config.ROOT_EXPERIMENT)
     make_exists(config.TRAINING.PATH_MODEL)
+    make_exists(config.TRAINING.TENSORBOARD_DIR)
 
     device = "mps" if torch.backends.mps.is_available() else "cpu"
     logging.info(f"device : {device}")

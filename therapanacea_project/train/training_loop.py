@@ -22,7 +22,7 @@ def training_loop(
 
     for batch_idx, (data, target) in enumerate(loader):
         data = data.to(device)
-        target = target.to(device)  # , torch.float)
+        target = target.to(device, torch.float)
 
         optimizer.zero_grad()
 
@@ -39,7 +39,7 @@ def training_loop(
             )
 
         if metrics_collection is not None:
-            metrics_collection(prediction, target)
+            metrics_collection(prediction, target.long())
 
         loss.backward()
 
@@ -60,11 +60,27 @@ def training_loop(
         metrics = metrics_collection.compute()
 
         for k, v in metrics.items():
-            logging.info(f"Training | {k} = {v.detach().cpu().item()}")
 
-            if writer is not None:
-                writer.add_scalar(
-                    f"Training {k}", v.detach().cpu().item(), epoch
-                )
+            if k == "BinaryROC":
+                fpr, tpr, _ = v
+                fnr = 1 - tpr
+                logging.info(f"Training | fpr = {fpr.detach().cpu().item()}")
+                logging.info(f"Training | fnr = {fnr.detach().cpu().item()}")
+
+                if writer is not None:
+                    writer.add_scalar(
+                        "Training fpr", fpr.detach().cpu().item(), epoch
+                    )
+                    writer.add_scalar(
+                        "Training fnr", fnr.detach().cpu().item(), epoch
+                    )
+
+            else:
+                logging.info(f"Training | {k} = {v.detach().cpu().item()}")
+
+                if writer is not None:
+                    writer.add_scalar(
+                        f"Training {k}", v.detach().cpu().item(), epoch
+                    )
 
         metrics_collection.reset()

@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Dict
 
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
@@ -16,7 +16,7 @@ def get_train_val_dataloaders(
     train_transforms,
     val_transforms,
     val_size: float = 0.25,
-) -> Tuple[DataLoader, DataLoader]:
+) -> Tuple[DataLoader, DataLoader, Dict[int, float]]:
 
     train_images, val_images, train_labels, val_labels = train_test_split(
         images_list,
@@ -39,7 +39,12 @@ def get_train_val_dataloaders(
         batch_size=batch_size,
     )
 
-    return train_loader, val_loader
+    train_classes_distribution = {
+        0: len(train_labels) - sum(train_labels),
+        1: sum(train_labels),
+    }
+
+    return train_loader, val_loader, train_classes_distribution
 
 
 def get_single_dataloader(
