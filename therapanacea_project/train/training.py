@@ -13,8 +13,8 @@ from torchmetrics.classification import (
     BinaryRecall,
     BinaryROC,
     BinarySpecificity,
+    Specificity,
 )
-from torchvision import transforms
 
 from therapanacea_project.dataset.dataloader import get_train_val_dataloaders
 from therapanacea_project.models.resnet18 import get_resnet18_architecture
@@ -22,6 +22,11 @@ from therapanacea_project.train.training_loop import training_loop
 from therapanacea_project.train.validation_loop import validation_loop
 from therapanacea_project.utils.files import load_yaml, make_exists
 from therapanacea_project.utils.io import read_txt_object
+
+from therapanacea_project.dataset.transforms.utils import (
+    instantiate_transforms_from_config,
+)
+from therapanacea_project.metrics.utils import instantiate_metrics_from_config
 
 
 def train_model_from_config(
@@ -46,20 +51,6 @@ def train_model_from_config(
     )
     logging.info(f"The model has {trainable_params} trainable parameters")
 
-    train_transforms = transforms.Compose(
-        [
-            transforms.RandomHorizontalFlip(),
-            transforms.Resize(256),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ]
-    )
-    val_transforms = transforms.Compose(
-        [
-            transforms.Resize(256),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ]
-    )
-
     path_train_label = Path(config.TRAINING.DATASET.PATH_LABELS)
     images_list = Path(config.TRAINING.DATASET.IMAGES_DIR).glob("*.jpg")
     images_list = sorted(list(images_list))
@@ -68,6 +59,13 @@ def train_model_from_config(
         path_train_label,
     )
     labels = [int(label) for label in labels]
+
+    train_transforms = instantiate_transforms_from_config(
+        transform_config=config.TRAINING.DATASET.TRANSFORMS.TRAINING
+    )
+    val_transforms = instantiate_transforms_from_config(
+        transform_config=config.TRAINING.DATASET.TRANSFORMS.VALIDATION
+    )
 
     train_loader, val_loader, train_classes_distribution = (
         get_train_val_dataloaders(
@@ -89,17 +87,8 @@ def train_model_from_config(
         model.parameters(), lr=config.TRAINING.LEARNING_RATE, momentum=0.9
     )
 
-    metrics_collection = MetricCollection(
-        [
-            Accuracy(
-                task="multiclass", num_classes=2, average="macro"
-            ),  # balanced accuracy
-            # BinaryAccuracy(threshold=0.5),
-            # BinaryPrecision(threshold=0.5),
-            # BinaryRecall(threshold=0.5),
-            # BinarySpecificity(threshold=0.5),
-            BinaryROC(thresholds=[0.5]),
-        ]
+    metrics_collection = instantiate_metrics_from_config(
+        metrics_config=config.VALIDATION.METRICS
     ).to(device)
 
     best_hter = 10**3
@@ -151,19 +140,25 @@ def train_model_from_config(
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-
     config_path = Path(
         "therapanacea_project/configs/training/training_config.yaml"
     )
     config = load_yaml(config_path)
+
+    logging.basicConfig(
+        level=logging.INFO,
+        handlers=[
+            logging.FileHandler(config.TRAINING.PATH_LOGS),
+            logging.StreamHandler(),
+        ],
+    )
 
     make_exists(config.EXPERIMENT_FOLDER)
     make_exists(config.ROOT_EXPERIMENT)
     make_exists(config.TRAINING.PATH_MODEL)
     make_exists(config.TRAINING.TENSORBOARD_DIR)
 
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     logging.info(f"device : {device}")
 
     train_model_from_config(config=config, device=device)
