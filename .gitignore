@@ -2,7 +2,10 @@
 **/train_img/
 **/val_img/
 **/__pycache__/
+**/.ipynb_checkpoints/
+**/.vscode/
 
 # Files
 /*.jpg
-/*.txt
+/**/*.txt
+/**/*.zip
