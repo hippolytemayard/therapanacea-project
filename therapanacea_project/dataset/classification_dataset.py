@@ -1,4 +1,4 @@
-from typing import List, Union, Tuple
+from typing import Union
 
 import torch
 from torch.utils.data import Dataset
@@ -7,31 +7,58 @@ from torchvision.transforms import Compose
 
 
 class ClassificationDataset(Dataset):
+    """
+    Custom dataset class for classification tasks.
+    """
 
     def __init__(
         self,
-        images_list: List[str],
-        images_labels: List[int],
+        images_list: list[str],
+        images_labels: list[int],
         transforms: Union[Compose, None] = None,
+        inference: bool = False,
     ) -> None:
+        """
+        Constructor for the ClassificationDataset class.
+
+        Args:
+            images_list (list[str]): List of file paths to images.
+            images_labels (list[int]): List of corresponding labels for images.
+            transforms (Union[Compose, None], optional): Optional
+                transformations to apply to images. Defaults to None.
+            inference (bool): Inference mode dataset.
+        """
         self.images_list = images_list
         self.images_labels = images_labels
         self.transforms = transforms
+        self.inference = inference
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.images_labels)
 
-    def __getitem__(self, idx) -> Tuple[torch.Tensor, int]:
+    def __getitem__(self, idx) -> Union[tuple[torch.Tensor, int], torch.Tensor]:
+        """
+        Retrieves an image and its corresponding label from the dataset.
+
+        Args:
+            idx (int): Index of the image to retrieve.
+
+        Returns:
+            tuple[torch.Tensor, int]: Tuple containing the image tensor and
+                its corresponding label or only tensor if inference mode.
+        """
         image = read_image(str(self.images_list[idx]))
-        # image = image.to(torch.float)
         image = image.to(torch.float) / 255.0
+
+        if self.transforms is not None:
+            image = self.transforms(image)
+
+        if self.inference:
+            return image
 
         label = self.images_labels[idx]
 
         assert isinstance(label, int)
         assert isinstance(image, torch.Tensor)
-
-        if self.transforms is not None:
-            image = self.transforms(image)
 
         return image, label

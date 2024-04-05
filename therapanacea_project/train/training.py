@@ -67,7 +67,7 @@ def train_model_from_config(
         transform_config=config.TRAINING.DATASET.TRANSFORMS.VALIDATION
     )
 
-    train_loader, val_loader, train_classes_distribution = (
+    train_loader, val_loader, train_labels_distribution = (
         get_train_val_dataloaders(
             images_list=images_list,
             labels=labels,
@@ -79,10 +79,24 @@ def train_model_from_config(
     )
 
     logging.info(
-        f"Train dataset classes distribution: {train_classes_distribution}"
+        f"Train dataset classes distribution: {train_labels_distribution}"
     )
 
-    criterion = nn.BCELoss()
+    weight = (
+        torch.tensor(
+            [
+                sum(train_labels_distribution.values()) / n_samples
+                for _, n_samples in train_labels_distribution.items()
+            ]
+        )
+        if config.TRAINING.DATASET.WEIGHT_LOSS
+        else None
+    )
+
+    logging.info(f"weight: {weight}")
+
+    # criterion = nn.BCELoss(weight=weight)
+    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([0.13]).to(device))
     optimizer = optim.SGD(
         model.parameters(), lr=config.TRAINING.LEARNING_RATE, momentum=0.9
     )
@@ -100,6 +114,7 @@ def train_model_from_config(
             model=model,
             loader=train_loader,
             criterion=criterion,
+            with_logits=config.TRAINING.WITH_LOGITS,
             metrics_collection=metrics_collection,
             epoch=epoch,
             optimizer=optimizer,
@@ -112,6 +127,7 @@ def train_model_from_config(
             loader=val_loader,
             epoch=epoch,
             criterion=criterion,
+            with_logits=config.TRAINING.WITH_LOGITS,
             metrics_collection=metrics_collection,
             writer=writer,
             device=device,
@@ -145,6 +161,11 @@ if __name__ == "__main__":
     )
     config = load_yaml(config_path)
 
+    make_exists(config.EXPERIMENT_FOLDER)
+    make_exists(config.ROOT_EXPERIMENT)
+    make_exists(config.TRAINING.PATH_MODEL)
+    make_exists(config.TRAINING.TENSORBOARD_DIR)
+
     logging.basicConfig(
         level=logging.INFO,
         handlers=[
@@ -152,11 +173,6 @@ if __name__ == "__main__":
             logging.StreamHandler(),
         ],
     )
-
-    make_exists(config.EXPERIMENT_FOLDER)
-    make_exists(config.ROOT_EXPERIMENT)
-    make_exists(config.TRAINING.PATH_MODEL)
-    make_exists(config.TRAINING.TENSORBOARD_DIR)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logging.info(f"device : {device}")

@@ -1,4 +1,5 @@
 import logging
+from typing import Optional, Union
 
 import torch
 from torch import nn
@@ -11,12 +12,33 @@ def validation_loop(
     model: nn.Module,
     loader: DataLoader,
     epoch: int,
-    criterion,
-    metrics_collection: MetricCollection = None,
+    criterion: nn.modules.loss._Loss,
+    with_logits: bool = False,
+    metrics_collection: Optional[MetricCollection] = None,
     writer=None,
-    device="cpu",
+    device: Union[str, torch.device] = "cpu",
 ):
+    """
+    Model validation loop
 
+    Args:
+        model (nn.Module): The model to evaluate.
+        loader (DataLoader): The data loader providing the validation data.
+        epoch (int): The current epoch number.
+        criterion (nn.modules.loss._Loss): The loss function
+        with_logits (bool, optional): Indicates whether the model output
+            includes logits. Defaults to False.
+        metrics_collection (Optional[MetricCollection], optional): Collection
+            of metrics to compute during validation. Defaults to None.
+        writer (optional): Object for writing validation progress to a log.
+            Defaults to None.
+        device (Union[str, torch.device], optional): Device on which to
+            perform validation. Defaults to "cpu".
+
+    Returns:
+        Optional[dict]: A dictionary containing computed metrics,
+            if metrics_collection is provided; otherwise, returns None.
+    """
     model.eval()
 
     val_loss = 0
@@ -28,7 +50,11 @@ def validation_loop(
         output = model(data)
         prediction = torch.sigmoid(output).squeeze(1)
 
-        val_loss += criterion(prediction, target).data.item()
+        val_loss += (
+            criterion(prediction, target).data.item()
+            if not with_logits
+            else criterion(output, target.unsqueeze(-1)).data.item()
+        )
 
         if metrics_collection is not None:
             metrics_collection(prediction, target.long())
