@@ -69,6 +69,7 @@ def get_single_dataloader(
     transform: transforms,
     batch_size: int,
     num_workers: int = 4,
+    inference: bool = False,
 ) -> DataLoader:
     """
     Function to get a single DataLoader from image path and labels files.
@@ -80,12 +81,16 @@ def get_single_dataloader(
         batch_size (int): Batch size for DataLoader.
         num_workers (int, optional): Number of subprocesses to use for data
             loading. Defaults to 4.
+        inference (bool): Inference or train/val mode.
 
     Returns:
         DataLoader: DataLoader for the dataset.
     """
     dataset = ClassificationDataset(
-        images_list=images_list, images_labels=labels, transforms=transform
+        images_list=images_list,
+        images_labels=labels,
+        transforms=transform,
+        inference=inference,
     )
 
     dataloader = DataLoader(

@@ -14,7 +14,7 @@ class ClassificationDataset(Dataset):
     def __init__(
         self,
         images_list: list[str],
-        images_labels: list[int],
+        images_labels: Union[list[int], None],
         transforms: Union[Compose, None] = None,
         inference: bool = False,
     ) -> None:
@@ -23,7 +23,8 @@ class ClassificationDataset(Dataset):
 
         Args:
             images_list (list[str]): List of file paths to images.
-            images_labels (list[int]): List of corresponding labels for images.
+            images_labels (Union[list[int],None]): List of corresponding
+                labels for images. if None inference mode.
             transforms (Union[Compose, None], optional): Optional
                 transformations to apply to images. Defaults to None.
             inference (bool): Inference mode dataset.
@@ -34,7 +35,7 @@ class ClassificationDataset(Dataset):
         self.inference = inference
 
     def __len__(self) -> int:
-        return len(self.images_labels)
+        return len(self.images_list)
 
     def __getitem__(self, idx) -> Union[tuple[torch.Tensor, int], torch.Tensor]:
         """
@@ -53,7 +54,7 @@ class ClassificationDataset(Dataset):
         if self.transforms is not None:
             image = self.transforms(image)
 
-        if self.inference:
+        if self.inference and self.images_labels is None:
             return image
 
         label = self.images_labels[idx]
