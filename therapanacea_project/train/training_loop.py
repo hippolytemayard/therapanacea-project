@@ -1,4 +1,5 @@
 import logging
+from typing import Optional, Union
 
 import torch
 from torch import nn
@@ -13,11 +14,32 @@ def training_loop(
     criterion: nn.modules.loss._Loss,
     epoch: int,
     optimizer: Optimizer,
-    metrics_collection: MetricCollection = None,
+    with_logits: bool = False,
+    metrics_collection: Optional[MetricCollection] = None,
     log_interval: int = 200,
     writer=None,
-    device="cpu",
-):
+    device: Union[str, torch.device] = "cpu",
+) -> None:
+    """
+    Model training loop.
+
+    Args:
+        model (nn.Module): The model model to train.
+        loader (DataLoader): The data loader providing the training data.
+        criterion (nn.modules.loss._Loss): The loss function
+        epoch (int): The current epoch number.
+        optimizer (Optimizer): The optimizer used for training.
+        with_logits (bool, optional): Indicates whether the model output
+            includes logits. Defaults to False.
+        metrics_collection (Optional[MetricCollection], optional): Collection
+            of metrics to compute during training. Defaults to None.
+        log_interval (int, optional): Interval for logging training progress.
+            Defaults to 200.
+        writer (optional): Object for writing training progress to a log.
+            Defaults to None.
+        device (Union[str, torch.device], optional): Device on which to
+            perform training. Defaults to "cpu".
+    """
     model.train()
 
     for batch_idx, (data, target) in enumerate(loader):
@@ -29,7 +51,11 @@ def training_loop(
         output = model(data)
         prediction = torch.sigmoid(output).squeeze(1)
 
-        loss = criterion(prediction, target)
+        loss = (
+            criterion(prediction, target)
+            if not with_logits
+            else criterion(output, target.unsqueeze(-1))
+        )
 
         if writer is not None:
             writer.add_scalar(
