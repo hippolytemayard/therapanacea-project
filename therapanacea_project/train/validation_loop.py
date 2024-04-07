@@ -70,27 +70,12 @@ def validation_loop(
         metrics = metrics_collection.compute()
 
         for k, v in metrics.items():
-            if k == "BinaryROC":
-                fpr, tpr, _ = v
-                fnr = 1 - tpr
-                logging.info(f"Validation | fpr = {fpr.detach().cpu().item()}")
-                logging.info(f"Validation | fnr = {fnr.detach().cpu().item()}")
+            logging.info(f"Validation | {k} = {v.detach().cpu().item()}")
 
-                if writer is not None:
-                    writer.add_scalar(
-                        "Validation fpr", fpr.detach().cpu().item(), epoch
-                    )
-                    writer.add_scalar(
-                        "Validation fnr", fnr.detach().cpu().item(), epoch
-                    )
-
-            else:
-                logging.info(f"Validation | {k} = {v.detach().cpu().item()}")
-
-                if writer is not None:
-                    writer.add_scalar(
-                        f"Validation {k}", v.detach().cpu().item(), epoch
-                    )
+            if writer is not None:
+                writer.add_scalar(
+                    f"Validation {k}", v.detach().cpu().item(), epoch
+                )
 
         metrics_collection.reset()
 

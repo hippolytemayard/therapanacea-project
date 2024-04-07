@@ -206,9 +206,10 @@ def train_one_fold(
             device=device,
         )
 
-        fpr, tpr, thresholds = dict_metrics["BinaryROC"]
-        fnr = 1 - tpr
-        hter = (fpr + fnr) / 2
+        far, frr, hter = (
+            dict_metrics[metric_]
+            for metric_ in config.VALIDATION.METRICS_OF_INTEREST
+        )
 
         if hter < best_hter:
             logging.info(
@@ -219,7 +220,7 @@ def train_one_fold(
                 "epoch": epoch,
                 "model": model.state_dict(),
                 "opt": optimizer.state_dict(),
-                "val_metrics": {"fpr": fpr, "fnr": fnr, "hter": hter},
+                "val_metrics": {"far": far, "frr": frr, "hter": hter},
             }
             torch.save(
                 save_dict,

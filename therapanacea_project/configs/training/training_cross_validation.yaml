@@ -50,6 +50,8 @@ TRAINING:
 
 
 VALIDATION:
+  SAVING_METRIC : HalfTotalErrorRate
+  METRICS_OF_INTEREST : ["FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
   METRICS: 
     frameworks: ["torchmetrics", "torchmetrics","torchmetrics","torchmetrics", "custom", "custom", "custom"]
     classes: ["BinaryROC", "BinaryPrecision", "BinaryRecall", "Specificity", "FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
