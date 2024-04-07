@@ -5,6 +5,8 @@ import torchmetrics
 from omegaconf import OmegaConf
 from torchmetrics import MetricCollection
 
+from therapanacea_project.metrics import dict_metrics
+
 
 def instantiate_metrics_from_config(
     metrics_config: dict[str, list[Union[str, dict]]]
@@ -37,6 +39,8 @@ def instantiate_metrics_from_config(
             fn_params = OmegaConf.to_object(fn_params)
             if framework == "torchmetrics":
                 fn = getattr(torchmetrics.classification, fn_name)(**fn_params)
+            elif framework == "custom":
+                fn = dict_metrics[fn_name](**fn_params)
 
             compositions.append(fn)
 

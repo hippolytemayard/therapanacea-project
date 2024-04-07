@@ -65,7 +65,7 @@ def training_loop(
             )
 
         if metrics_collection is not None:
-            metrics_collection(prediction, target.long())
+            metrics_collection.update(prediction, target.long())
 
         loss.backward()
 
@@ -87,26 +87,11 @@ def training_loop(
 
         for k, v in metrics.items():
 
-            if k == "BinaryROC":
-                fpr, tpr, _ = v
-                fnr = 1 - tpr
-                logging.info(f"Training | fpr = {fpr.detach().cpu().item()}")
-                logging.info(f"Training | fnr = {fnr.detach().cpu().item()}")
+            logging.info(f"Training | {k} = {v.detach().cpu().item()}")
 
-                if writer is not None:
-                    writer.add_scalar(
-                        "Training fpr", fpr.detach().cpu().item(), epoch
-                    )
-                    writer.add_scalar(
-                        "Training fnr", fnr.detach().cpu().item(), epoch
-                    )
-
-            else:
-                logging.info(f"Training | {k} = {v.detach().cpu().item()}")
-
-                if writer is not None:
-                    writer.add_scalar(
-                        f"Training {k}", v.detach().cpu().item(), epoch
-                    )
+            if writer is not None:
+                writer.add_scalar(
+                    f"Training {k}", v.detach().cpu().item(), epoch
+                )
 
         metrics_collection.reset()
