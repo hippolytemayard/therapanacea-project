@@ -1,10 +1,10 @@
-EXPERIMENT: 24
+EXPERIMENT: 100
 ROOT_PROJECT: /home/ubuntu/code/therapanacea-project
 EXPERIMENT_FOLDER: ${ROOT_PROJECT}/experiments
 ROOT_EXPERIMENT: ${EXPERIMENT_FOLDER}/experiment_${EXPERIMENT}
 
 TRAINING:
-  EPOCHS: 20
+  EPOCHS: 8
   BACKBONE: "resnet18"
   PRETRAINED: TRUE
   FINE_TUNE: TRUE
@@ -27,7 +27,7 @@ TRAINING:
     VALIDATION_SPLIT: 0.25
     RANDOM_SEED: 42
 
-    WEIGHT_LOSS: TRUE
+    WEIGHT_LOSS: FALSE
 
     KFOLD : 5 
 
@@ -51,16 +51,14 @@ TRAINING:
 
 VALIDATION:
   METRICS: 
-    frameworks: ["torchmetrics", "torchmetrics","torchmetrics","torchmetrics",]
-    classes: ["BinaryROC", "BinaryPrecision", "BinaryRecall", "Specificity"]
+    frameworks: ["torchmetrics", "torchmetrics","torchmetrics","torchmetrics", "custom", "custom"]
+    classes: ["BinaryROC", "BinaryPrecision", "BinaryRecall", "Specificity", "FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
     classes_params: [
       {"thresholds":[0.5]},
       {"threshold": 0.5},
       {"threshold": 0.5},
       {"task": "binary"},
+      {"threshold": 0.5},
+      {"threshold": 0.5},
+      {"threshold": 0.5},
     ]
-
-
-
-
-
