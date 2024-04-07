@@ -51,7 +51,7 @@ TRAINING:
 
 VALIDATION:
   METRICS: 
-    frameworks: ["torchmetrics", "torchmetrics","torchmetrics","torchmetrics", "custom", "custom"]
+    frameworks: ["torchmetrics", "torchmetrics","torchmetrics","torchmetrics", "custom", "custom", "custom"]
     classes: ["BinaryROC", "BinaryPrecision", "BinaryRecall", "Specificity", "FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
     classes_params: [
       {"thresholds":[0.5]},

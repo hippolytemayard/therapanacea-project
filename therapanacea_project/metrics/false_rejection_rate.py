@@ -20,10 +20,10 @@ class FalseRejectionRate(Metric):
     def __init__(self, threshold: float = 0.5) -> None:
         super().__init__()
         self.add_state(
-            "false_rejections", default=torch.tensor(0.0), dist_reduce_fx="sum"
+            "total_positives", default=torch.tensor(0), dist_reduce_fx="sum"
         )
         self.add_state(
-            "total_attempts", default=torch.tensor(0), dist_reduce_fx="sum"
+            "false_rejections", default=torch.tensor(0), dist_reduce_fx="sum"
         )
         self.threshold = threshold
 
@@ -37,10 +37,10 @@ class FalseRejectionRate(Metric):
         """
 
         false_rejections = torch.sum(
-            (predictions < self.threshold) & (labels == 1)
+            (predictions < 0.5) & (labels == 1)
         ).float()
-        self.false_rejections += false_rejections
-        self.total_attempts += labels.size(0)
+        self.false_rejections += false_rejections.long()
+        self.total_positives += torch.sum(labels == 1).long()
 
     def compute(self) -> torch.Tensor:
         """
@@ -49,7 +49,7 @@ class FalseRejectionRate(Metric):
         Returns:
             torch.Tensor: The computed False Acceptance Rate.
         """
-        frr = self.false_rejections / self.total_attempts
+        frr = (self.false_rejections / self.total_positives).to(torch.float32)
         return frr
 
 
