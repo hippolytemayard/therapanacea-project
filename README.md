@@ -70,3 +70,27 @@ FRR is calculated as the ratio of the number of false rejections (instances wher
 $FRR = \frac{Number ~of ~False ~Rejections}{Total ~Number ~of ~Impostor ~Identification ~Attempts}$
 
 A custom implementation of FRR and HTER has been implemented. 
+
+# Training 
+
+Training has been implemented with different split stratefies: 
+- stratified split 
+- cross validation 
+
+The user can specify the split strategy within the configuration file 
+
+## Random split training
+
+Execute the stratified split training script by running the Python file. You can use the command line to specify the path to the configuration file using the --config argument. Here's an example command:
+
+```bash
+poetry run python therapanacea_project/train/training.py --config therapanacea_project/configs/training/stratified_split/training_resnet18.yaml
+```
+
+## Cross-validation training
+
+Run the Training Script: Execute the cross-validation training script by running the Python file. You can use the command line to specify the path to the configuration file using the --config argument. Here's an example command:
+
+```bash
+poetry run python therapanacea_project/train/training.py --config therapanacea_project/configs/training/cross_validation/training_resnet18.yaml
+```

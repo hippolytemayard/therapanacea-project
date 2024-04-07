@@ -1,16 +1,12 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import Union
 
-import numpy as np
 import torch
 from omegaconf import OmegaConf
-from sklearn.model_selection import StratifiedKFold
-from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from therapanacea_project.dataset.dataloader import get_single_dataloader
+from therapanacea_project.dataset.dataloader import get_train_val_dataloaders
 from therapanacea_project.dataset.transforms.utils import (
     instantiate_transforms_from_config,
 )
@@ -24,111 +20,16 @@ from therapanacea_project.utils.files import load_yaml, make_exists
 from therapanacea_project.utils.io import read_txt_object
 
 
-def cross_validation_training_from_config(
+def stratified_split_train_model_from_config(
     config: OmegaConf,
-    device: Union[str, torch.device],
-) -> None:
+    device: torch.device,
+):
     """
-    Perform cross-validation training based on the provided configuration.
+    Train a model based on the provided configuration.
 
     Args:
-        config (OmegaConf): Configuration object containing training
-            parameters.
-        device (Union[str, torch.device]): Device to use for training
-            (e.g., 'cpu' or 'cuda').
-
-    Returns:
-        None
-    """
-
-    path_train_label = Path(config.TRAINING.DATASET.PATH_LABELS)
-    images_list = Path(config.TRAINING.DATASET.IMAGES_DIR).glob("*.jpg")
-    images_list = sorted(list(images_list))
-
-    labels = read_txt_object(
-        path_train_label,
-    )
-    labels = [int(label) for label in labels]
-
-    train_transforms = instantiate_transforms_from_config(
-        transform_config=config.TRAINING.DATASET.TRANSFORMS.TRAINING
-    )
-    val_transforms = instantiate_transforms_from_config(
-        transform_config=config.TRAINING.DATASET.TRANSFORMS.VALIDATION
-    )
-
-    skf = StratifiedKFold(n_splits=config.TRAINING.DATASET.KFOLD)
-
-    logging.info(f"Starting {config.TRAINING.DATASET.KFOLD}-Fold training")
-
-    for fold_id, (train_index, val_index) in enumerate(
-        skf.split(images_list, labels)
-    ):
-
-        train_images, val_images = (
-            np.asarray(images_list)[train_index].tolist(),
-            np.asarray(images_list)[val_index].tolist(),
-        )
-        train_labels, val_labels = (
-            np.asarray(labels)[train_index].tolist(),
-            np.asarray(labels)[val_index].tolist(),
-        )
-
-        train_labels_distribution = {
-            0: len(train_labels) - sum(train_labels),
-            1: sum(train_labels),
-        }
-
-        logging.info(
-            f"Train dataset classes distribution: {train_labels_distribution}"
-        )
-
-        train_loader = get_single_dataloader(
-            images_list=train_images,
-            labels=train_labels,
-            transform=train_transforms,
-            batch_size=config.TRAINING.BATCH_SIZE,
-        )
-        val_loader = get_single_dataloader(
-            images_list=val_images,
-            labels=val_labels,
-            transform=val_transforms,
-            batch_size=config.TRAINING.BATCH_SIZE,
-        )
-
-        logging.info(f"Training Fold {fold_id}")
-
-        train_one_fold(
-            config=config,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            train_labels_distribution=train_labels_distribution,
-            fold_id=fold_id,
-            device=device,
-        )
-
-
-def train_one_fold(
-    config: OmegaConf,
-    train_loader: DataLoader,
-    val_loader: DataLoader,
-    train_labels_distribution: dict[int, int],
-    fold_id: int,
-    device: Union[str, torch.device],
-) -> None:
-    """
-    Perform training for a single fold.
-
-    Args:
-        config (OmegaConf): Configuration object containing training parameters.
-        train_loader (DataLoader): DataLoader for training data.
-        val_loader (DataLoader): DataLoader for validation data.
-        train_labels_distribution (Dict[int, int]): Distribution of training labels.
-        fold_id (int): Fold ID.
-        device (torch.device): Device to use for training.
-
-    Returns:
-        None
+        config (OmegaConf): Experiment configuration.
+        device (torch.device): Device to run the training on (e.g., 'cuda' or 'cpu').
     """
 
     writer = (
@@ -149,6 +50,37 @@ def train_one_fold(
     )
     logging.info(f"The model has {trainable_params} trainable parameters")
 
+    path_train_label = Path(config.TRAINING.DATASET.PATH_LABELS)
+    images_list = Path(config.TRAINING.DATASET.IMAGES_DIR).glob("*.jpg")
+    images_list = sorted(list(images_list))
+
+    labels = read_txt_object(
+        path_train_label,
+    )
+    labels = [int(label) for label in labels]
+
+    train_transforms = instantiate_transforms_from_config(
+        transform_config=config.TRAINING.DATASET.TRANSFORMS.TRAINING
+    )
+    val_transforms = instantiate_transforms_from_config(
+        transform_config=config.TRAINING.DATASET.TRANSFORMS.VALIDATION
+    )
+
+    train_loader, val_loader, train_labels_distribution = (
+        get_train_val_dataloaders(
+            images_list=images_list,
+            labels=labels,
+            batch_size=config.TRAINING.BATCH_SIZE,
+            train_transforms=train_transforms,
+            val_transforms=val_transforms,
+            val_size=config.TRAINING.DATASET.VALIDATION_SPLIT,
+        )
+    )
+
+    logging.info(
+        f"Train dataset classes distribution: {train_labels_distribution}"
+    )
+
     pos_weight = (
         sum(train_labels_distribution.values()) / train_labels_distribution[1]
     ) / (sum(train_labels_distribution.values()) / train_labels_distribution[0])
@@ -163,6 +95,7 @@ def train_one_fold(
     else:
         criterion = losses_dict[config.TRAINING.LOSS]()
 
+    # criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([0.13]).to(device))
     optimizer = optimizer_dict[config.TRAINING.OPTIMIZER](
         params=model.parameters(), lr=config.TRAINING.LEARNING_RATE
     )
@@ -216,27 +149,20 @@ def train_one_fold(
                 "val_metrics": {"far": far, "frr": frr, "hter": hter},
             }
             torch.save(
-                save_dict,
-                Path(config.TRAINING.PATH_MODEL)
-                / f"best_model_fold{fold_id}.pt",
+                save_dict, Path(config.TRAINING.PATH_MODEL) / "best_model.pt"
             )
-
-            best_metrics = dict_metrics
-
-    logging.info(f"best metrics : {best_metrics}")
 
     return
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Train model using configuration file"
     )
     parser.add_argument(
         "--config",
         type=str,
-        default="therapanacea_project/configs/training/training_resnet18.yaml",
+        default="therapanacea_project/configs/training/stratified_split/training_resnet18.yaml",
         help="Path to the configuration YAML file",
     )
     args = parser.parse_args()
@@ -259,7 +185,4 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logging.info(f"device : {device}")
 
-    cross_validation_training_from_config(
-        config=config,
-        device=device,
-    )
+    stratified_split_train_model_from_config(config=config, device=device)

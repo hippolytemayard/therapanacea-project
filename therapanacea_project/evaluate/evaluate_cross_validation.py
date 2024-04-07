@@ -1,26 +1,29 @@
-from pathlib import Path
+import argparse
 
 import pandas as pd
+from omegaconf import OmegaConf
 
-from therapanacea_project.evaluate.evaluate import (
+from therapanacea_project.evaluate.evaluate_stratified_split import (
     get_model_evaluation_from_checkpoint,
 )
+from therapanacea_project.utils.files import load_yaml
 
 
-def cross_val_evaluation_from_checkpoints(
-    experiment_model_folder: Path,
+def cross_val_evaluation_from_config(
+    config: OmegaConf,
 ) -> pd.DataFrame:
     """
     Perform cross-validation evaluation by loading evaluation metrics from
     saved PyTorch model checkpoints and return them as a pandas DataFrame.
 
     Args:
-        experiment_model_folder (Path): Path to the folder containing saved
+        config (Path): Training configuration file.
         PyTorch model checkpoints.
 
     Returns:
         pd.DataFrame: DataFrame containing evaluation metrics for each fold.
     """
+    experiment_model_folder = config.TRAINING.PATH_MODEL
     saved_models = list(experiment_model_folder.glob("*.pt"))
 
     list_df_metrics = []
@@ -38,10 +41,18 @@ def cross_val_evaluation_from_checkpoints(
 
 
 if __name__ == "__main__":
-    experiment_model_folder = Path(
-        "/home/ubuntu/code/therapanacea-project/experiments/experiment_23/saved_models/"
+
+    parser = argparse.ArgumentParser(
+        description="Train model using configuration file"
     )
-    saved_models = cross_val_evaluation_from_checkpoints(
-        experiment_model_folder
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="therapanacea_project/configs/training/stratified_split/training_resnet18.yaml",
+        help="Path to the configuration YAML file",
     )
+    args = parser.parse_args()
+    config = load_yaml(args.config)
+
+    saved_models = cross_val_evaluation_from_config(config=config)
     print(saved_models)

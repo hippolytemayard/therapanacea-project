@@ -1,4 +1,4 @@
-EXPERIMENT: 100
+EXPERIMENT: 23
 ROOT_PROJECT: /home/ubuntu/code/therapanacea-project
 EXPERIMENT_FOLDER: ${ROOT_PROJECT}/experiments
 ROOT_EXPERIMENT: ${EXPERIMENT_FOLDER}/experiment_${EXPERIMENT}
@@ -20,6 +20,8 @@ TRAINING:
   ENABLE_TENSORBOARD : TRUE
   TENSORBOARD_DIR: ${..ROOT_EXPERIMENT}/tensorboard_logs
 
+  CROSS_VALIDATION : TRUE
+
   DATASET: 
     PATH_LABELS : ./data/label_train.txt
     IMAGES_DIR : ./data/train_img/
@@ -27,7 +29,7 @@ TRAINING:
     VALIDATION_SPLIT: 0.25
     RANDOM_SEED: 42
 
-    WEIGHT_LOSS: FALSE
+    WEIGHT_LOSS: TRUE
 
     KFOLD : 5 
 

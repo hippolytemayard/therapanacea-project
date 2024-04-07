@@ -1,0 +1,66 @@
+EXPERIMENT: 200
+ROOT_PROJECT: /home/ubuntu/code/therapanacea-project
+EXPERIMENT_FOLDER: ${ROOT_PROJECT}/experiments
+ROOT_EXPERIMENT: ${EXPERIMENT_FOLDER}/experiment_${EXPERIMENT}
+
+TRAINING:
+  EPOCHS: 8
+  BACKBONE: "resnet34"
+  PRETRAINED: TRUE
+  FINE_TUNE: TRUE
+  BATCH_SIZE: 128
+  OPTIMIZER: Adam
+  LEARNING_RATE:  0.0001
+  LOSS: BCEWithLogitsLoss
+  WITH_LOGITS: TRUE
+  EVALUATION_FREQUENCY: 1
+  PRINT_FREQ: 1000
+  PATH_MODEL : ${..ROOT_EXPERIMENT}/saved_models
+  PATH_LOGS : ${..ROOT_EXPERIMENT}/training.log
+  ENABLE_TENSORBOARD : TRUE
+  TENSORBOARD_DIR: ${..ROOT_EXPERIMENT}/tensorboard_logs
+
+  CROSS_VALIDATION : FALSE
+
+  DATASET: 
+    PATH_LABELS : ./data/label_train.txt
+    IMAGES_DIR : ./data/train_img/
+    N_CLASSES: 1
+    VALIDATION_SPLIT: 0.25
+    RANDOM_SEED: 42
+
+    WEIGHT_LOSS: TRUE
+
+    TRANSFORMS: 
+      TRAINING:
+        frameworks: ["torchvision", "torchvision", "torchvision"]
+        classes: ["RandomHorizontalFlip", "Resize", "Normalize"]
+        classes_params: [
+          {"p": 0.5},
+          {"size": 256},
+          {"mean": [0.485, 0.456, 0.406],"std": [0.229, 0.224, 0.225] },
+        ]
+      VALIDATION:
+        frameworks: ["torchvision", "torchvision"]
+        classes: ["Resize", "Normalize"]
+        classes_params: [
+          {"size": 256},
+          {"mean": [0.485, 0.456, 0.406],"std": [0.229, 0.224, 0.225] },
+        ]
+
+
+VALIDATION:
+  SAVING_METRIC : HalfTotalErrorRate
+  METRICS_OF_INTEREST : ["FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
+  METRICS: 
+    frameworks: ["torchmetrics", "torchmetrics","torchmetrics","torchmetrics", "custom", "custom", "custom"]
+    classes: ["BinaryROC", "BinaryPrecision", "BinaryRecall", "Specificity", "FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
+    classes_params: [
+      {"thresholds":[0.5]},
+      {"threshold": 0.5},
+      {"threshold": 0.5},
+      {"task": "binary"},
+      {"threshold": 0.5},
+      {"threshold": 0.5},
+      {"threshold": 0.5},
+    ]
