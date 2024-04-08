@@ -12,12 +12,12 @@ INFERENCE:
   BATCH_SIZE : 512
   PREDICTION_THRESHOLD : 0.5
 
-  DATASET: 
+  DATASET:
     IMAGES_DIR : ./data/val_img/
     N_CLASSES: 1
     RANDOM_SEED: 42
 
-    TRANSFORMS: 
+    TRANSFORMS:
       INFERENCE:
         frameworks: ["torchvision", "torchvision"]
         classes: ["Resize", "Normalize"]

@@ -1,16 +1,16 @@
-EXPERIMENT: 101
+EXPERIMENT: 31
 ROOT_PROJECT: /home/ubuntu/code/therapanacea-project
 EXPERIMENT_FOLDER: ${ROOT_PROJECT}/experiments
 ROOT_EXPERIMENT: ${EXPERIMENT_FOLDER}/experiment_${EXPERIMENT}
 
 TRAINING:
-  EPOCHS: 8
+  EPOCHS: 20
   BACKBONE: "resnet34"
   PRETRAINED: TRUE
   FINE_TUNE: TRUE
-  BATCH_SIZE: 128
+  BATCH_SIZE: 256
   OPTIMIZER: Adam
-  LEARNING_RATE:  0.0001
+  LEARNING_RATE:  0.001
   LOSS: BCEWithLogitsLoss
   WITH_LOGITS: TRUE
   EVALUATION_FREQUENCY: 1
@@ -22,7 +22,7 @@ TRAINING:
 
   CROSS_VALIDATION : TRUE
 
-  DATASET: 
+  DATASET:
     PATH_LABELS : ./data/label_train.txt
     IMAGES_DIR : ./data/train_img/
     N_CLASSES: 1
@@ -31,22 +31,24 @@ TRAINING:
 
     WEIGHT_LOSS: TRUE
 
-    KFOLD : 5 
+    KFOLD : 5
 
-    TRANSFORMS: 
+    TRANSFORMS:
       TRAINING:
-        frameworks: ["torchvision", "torchvision", "torchvision"]
-        classes: ["RandomHorizontalFlip", "Resize", "Normalize"]
+        frameworks: ["torchvision", "torchvision", "torchvision", "torchvision"]
+        classes: ["RandomHorizontalFlip", "Resize", "CenterCrop", "Normalize"]
         classes_params: [
           {"p": 0.5},
           {"size": 256},
+          {"size": 224},
           {"mean": [0.485, 0.456, 0.406],"std": [0.229, 0.224, 0.225] },
         ]
       VALIDATION:
-        frameworks: ["torchvision", "torchvision"]
-        classes: ["Resize", "Normalize"]
+        frameworks: ["torchvision", "torchvision", "torchvision"]
+        classes: ["Resize", "CenterCrop", "Normalize"]
         classes_params: [
           {"size": 256},
+          {"size": 224},
           {"mean": [0.485, 0.456, 0.406],"std": [0.229, 0.224, 0.225] },
         ]
 
@@ -54,11 +56,11 @@ TRAINING:
 VALIDATION:
   SAVING_METRIC : HalfTotalErrorRate
   METRICS_OF_INTEREST : ["FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
-  METRICS: 
+  METRICS:
     frameworks: ["torchmetrics", "torchmetrics","torchmetrics","torchmetrics", "custom", "custom", "custom"]
-    classes: ["BinaryROC", "BinaryPrecision", "BinaryRecall", "Specificity", "FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
+    classes: ["BinaryAccuracy", "BinaryPrecision", "BinaryRecall", "Specificity", "FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
     classes_params: [
-      {"thresholds":[0.5]},
+      {"threshold": 0.5},
       {"threshold": 0.5},
       {"threshold": 0.5},
       {"task": "binary"},
@@ -66,3 +68,4 @@ VALIDATION:
       {"threshold": 0.5},
       {"threshold": 0.5},
     ]
+

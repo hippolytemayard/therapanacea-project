@@ -66,15 +66,17 @@ def stratified_split_train_model_from_config(
         transform_config=config.TRAINING.DATASET.TRANSFORMS.VALIDATION
     )
 
-    train_loader, val_loader, train_labels_distribution = (
-        get_train_val_dataloaders(
-            images_list=images_list,
-            labels=labels,
-            batch_size=config.TRAINING.BATCH_SIZE,
-            train_transforms=train_transforms,
-            val_transforms=val_transforms,
-            val_size=config.TRAINING.DATASET.VALIDATION_SPLIT,
-        )
+    (
+        train_loader,
+        val_loader,
+        train_labels_distribution,
+    ) = get_train_val_dataloaders(
+        images_list=images_list,
+        labels=labels,
+        batch_size=config.TRAINING.BATCH_SIZE,
+        train_transforms=train_transforms,
+        val_transforms=val_transforms,
+        val_size=config.TRAINING.DATASET.VALIDATION_SPLIT,
     )
 
     logging.info(

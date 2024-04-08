@@ -1,13 +1,19 @@
 # therapanacea-project
 
+- [Therapanacea Project](#therapanacea-project)
+  - [Installation](#installation)
+    - [Library requirements](#library-requirements)
+    - [Install environment](#install-environment)
+    - [Pre-commit setup](#pre-commit-setup)
 
-## System dependencies
 
-`Python 3.10.5` with `CUDA 11.6` related to `Pytorch==1.13.1+cu116` and `Torchvision==0.14.1+cu116`.
-```bash
-# check nvidia divers by running
-nvidia-smi
-```
+## Installation
+
+### Library requirements
+
+- Python 3.10.5
+- Poetry 1.8.2
+
 
 ## Pyenv
 Some ubuntu installs needed which should be installed before installing `python` with `pyenv`:
@@ -28,15 +34,16 @@ pyenv install 3.10.5
 pyenv global 3.10.5
 ```
 
-**Note**: Beware to set your correct `pyenv` version before installing `poetry` to prevent [this issue](https://github.com/python-poetry/poetry/issues/5252#issuecomment-1055697424) from happening. If you have an old version of pyenv, just remove existing pyenv with `sudo rm -r /home/ubuntu/.pyenv`.
-
 ## Poetry
 
-Install `Poetry 1.3.1` on your root system following [this documentation](https://www.notion.so/allisone-ai/ML-Dev-environment-on-your-remote-1d5891a6ba6a4ebdb8f0e32e704e71c3#705b1b1887664a02b291a12ba9bdaf55).
-Do not use `pip` to install poetry to avoid conflicts between various poetry installs.
+Install `Poetry 1.8.2` on your root system
+```bash
+curl -sSL https://install.python-poetry.org | python3 - --version 1.8.2
+```
+
+Install all module dependencies inside `pyproject.toml`.
 
 ```bash
-# install all module dependencies inside pyproject.toml
 poetry install
 
 # activate virtual environment
@@ -48,7 +55,22 @@ poetry shell
 Select venv in VSCode located at `/home/ubuntu/.cache/pypoetry/virtualenvs`
 
 
-## Evaluation metrics 
+### Pre-commit setup
+
+Pre-commit modify your code file with some tools (black for example) before each commit:
+
+```bash
+poetry run pre-commit install
+```
+
+You can run pre-commit manually with
+
+```bash
+poetry run pre-commit run --all-files
+```
+
+
+## Evaluation metrics
 
 The image classifier has to minimize the Half-Total Error Rate (HTER). HTER is derived from FAR and FRR to provide a balanced evaluation of biometric system performance
 
@@ -69,15 +91,15 @@ FRR measures the rate at which authorized users are incorrectly rejected by the 
 FRR is calculated as the ratio of the number of false rejections (instances where an authorized user is incorrectly rejected) to the total number of identification attempts for authorized users.
 $FRR = \frac{Number ~of ~False ~Rejections}{Total ~Number ~of ~Impostor ~Identification ~Attempts}$
 
-A custom implementation of FRR and HTER has been implemented. 
+A custom implementation of FRR and HTER has been implemented.
 
-# Training 
+# Training
 
-Training has been implemented with different split stratefies: 
-- stratified split 
-- cross validation 
+Training has been implemented with different split stratefies:
+- stratified split
+- cross validation
 
-The user can specify the split strategy within the configuration file 
+The user can specify the split strategy within the configuration file
 
 ## Random split training
 
