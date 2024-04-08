@@ -11,6 +11,8 @@
   - [Training](#training)
   - [Evaluation](#evaluation)
   - [Inference](#inference)
+  - [Tests](#tests)
+  - [Results](#results)
 
 
 
