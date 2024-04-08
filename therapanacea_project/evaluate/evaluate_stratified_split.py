@@ -9,6 +9,7 @@ from therapanacea_project.utils.files import load_yaml
 
 def get_model_evaluation_from_checkpoint(
     config: OmegaConf,
+    cross_val: bool = False,
 ) -> dict[str, float]:
     """
     Load evaluation metrics from training config and return
@@ -20,8 +21,13 @@ def get_model_evaluation_from_checkpoint(
     Returns:
         dict: Dictionary containing evaluation metrics.
     """
-    experiment_model_folder = Path(config.TRAINING.PATH_MODEL)
-    saved_model_path = experiment_model_folder / "best_model.pt"
+
+    if not cross_val:
+        experiment_model_folder = Path(config.TRAINING.PATH_MODEL)
+        saved_model_path = experiment_model_folder / "best_model.pt"
+
+    else:
+        saved_model_path = config
 
     state_dict = torch.load(str(saved_model_path))
     val_metrics = state_dict["val_metrics"]

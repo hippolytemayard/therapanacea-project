@@ -16,6 +16,7 @@ from therapanacea_project.dataset.transforms.utils import (
 )
 from therapanacea_project.losses import losses_dict
 from therapanacea_project.metrics.utils import instantiate_metrics_from_config
+from therapanacea_project.models import get_model_architecture
 from therapanacea_project.models.resnet import get_resnet_architecture
 from therapanacea_project.optimizer import optimizer_dict
 from therapanacea_project.train.utils.training_loop import training_loop
@@ -137,7 +138,14 @@ def train_one_fold(
         else None
     )
 
-    model = get_resnet_architecture(
+    # model = get_resnet_architecture(
+    #    architecture=config.TRAINING.BACKBONE,
+    #    n_classes=config.TRAINING.DATASET.N_CLASSES,
+    #    fine_tune=config.TRAINING.FINE_TUNE,
+    #    pretrained=config.TRAINING.PRETRAINED,
+    # ).to(device)
+
+    model = get_model_architecture(
         architecture=config.TRAINING.BACKBONE,
         n_classes=config.TRAINING.DATASET.N_CLASSES,
         fine_tune=config.TRAINING.FINE_TUNE,
@@ -181,7 +189,7 @@ def train_one_fold(
             loader=train_loader,
             criterion=criterion,
             with_logits=config.TRAINING.WITH_LOGITS,
-            metrics_collection=metrics_collection,
+            metrics_collection=metrics_collection.clone(),
             epoch=epoch,
             optimizer=optimizer,
             writer=writer,
@@ -194,7 +202,7 @@ def train_one_fold(
             epoch=epoch,
             criterion=criterion,
             with_logits=config.TRAINING.WITH_LOGITS,
-            metrics_collection=metrics_collection,
+            metrics_collection=metrics_collection.clone(),
             writer=writer,
             device=device,
         )

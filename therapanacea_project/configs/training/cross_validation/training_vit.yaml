@@ -1,14 +1,14 @@
-EXPERIMENT: 41
+EXPERIMENT: 50
 ROOT_PROJECT: /home/ubuntu/code/therapanacea-project
 EXPERIMENT_FOLDER: ${ROOT_PROJECT}/experiments
 ROOT_EXPERIMENT: ${EXPERIMENT_FOLDER}/experiment_${EXPERIMENT}
 
 TRAINING:
-  EPOCHS: 12
-  BACKBONE: "resnet34"
+  EPOCHS: 10
+  BACKBONE: "vit_b_16"
   PRETRAINED: TRUE
   FINE_TUNE: TRUE
-  BATCH_SIZE: 128
+  BATCH_SIZE: 256
   OPTIMIZER: Adam
   LEARNING_RATE:  0.0001
   LOSS: BCEWithLogitsLoss
@@ -68,4 +68,3 @@ VALIDATION:
       {"threshold": 0.5},
       {"threshold": 0.5},
     ]
-

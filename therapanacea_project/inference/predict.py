@@ -102,7 +102,7 @@ def predict(
 if __name__ == "__main__":
 
     config_path = Path(
-        "therapanacea_project/configs/inference/inference_config.yaml"
+        "therapanacea_project/configs/inference/stratified_split/inference_resnet18.yaml"
     )
     config = load_yaml(config_path)
     predictions_dir = Path(config.INFERENCE.PATH_PREDICTIONS)

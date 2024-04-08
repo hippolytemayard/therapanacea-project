@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 from typing import Union
 
@@ -10,7 +11,7 @@ from therapanacea_project.dataset.transforms.utils import (
     instantiate_transforms_from_config,
 )
 from therapanacea_project.inference.predict import predict
-from therapanacea_project.models.resnet18 import get_resnet18_architecture
+from therapanacea_project.models import get_model_architecture
 from therapanacea_project.utils.files import load_yaml, make_exists
 from therapanacea_project.utils.io import write_predictions_to_file
 
@@ -48,10 +49,11 @@ def cross_val_predict_from_config(
     saved_models_folder = Path(config.INFERENCE.PATH_MODEL)
     saved_models = list(saved_models_folder.glob("*.pt"))
 
-    model = get_resnet18_architecture(
-        n_classes=config.INFERENCE.DATASET.N_CLASSES,
-        fine_tune=False,
-        pretrained=False,
+    model = get_model_architecture(
+        architecture=config.TRAINING.BACKBONE,
+        n_classes=config.TRAINING.DATASET.N_CLASSES,
+        fine_tune=config.TRAINING.FINE_TUNE,
+        pretrained=config.TRAINING.PRETRAINED,
     ).to(device)
 
     k_fold_predictions = []
@@ -75,10 +77,18 @@ def cross_val_predict_from_config(
 
 if __name__ == "__main__":
 
-    config_path = Path(
-        "therapanacea_project/configs/inference/inference_cross_val_config.yaml"
+    parser = argparse.ArgumentParser(
+        description="Train model using configuration file"
     )
-    config = load_yaml(config_path)
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="therapanacea_project/configs/inference/cross_validation/inference_resnet18.yaml",
+        help="Path to the configuration YAML file",
+    )
+    args = parser.parse_args()
+
+    config = load_yaml(args.config)
     predictions_dir = Path(config.INFERENCE.PATH_PREDICTIONS)
     make_exists(predictions_dir)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
