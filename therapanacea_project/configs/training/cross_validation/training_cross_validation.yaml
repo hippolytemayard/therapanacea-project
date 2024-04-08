@@ -20,7 +20,7 @@ TRAINING:
   ENABLE_TENSORBOARD : TRUE
   TENSORBOARD_DIR: ${..ROOT_EXPERIMENT}/tensorboard_logs
 
-  DATASET: 
+  DATASET:
     PATH_LABELS : ./data/label_train.txt
     IMAGES_DIR : ./data/train_img/
     N_CLASSES: 1
@@ -29,9 +29,9 @@ TRAINING:
 
     WEIGHT_LOSS: TRUE
 
-    KFOLD : 5 
+    KFOLD : 5
 
-    TRANSFORMS: 
+    TRANSFORMS:
       TRAINING:
         frameworks: ["torchvision", "torchvision", "torchvision"]
         classes: ["RandomHorizontalFlip", "Resize", "Normalize"]
@@ -52,7 +52,7 @@ TRAINING:
 VALIDATION:
   SAVING_METRIC : HalfTotalErrorRate
   METRICS_OF_INTEREST : ["FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
-  METRICS: 
+  METRICS:
     frameworks: ["torchmetrics", "torchmetrics","torchmetrics","torchmetrics", "custom", "custom", "custom"]
     classes: ["BinaryROC", "BinaryPrecision", "BinaryRecall", "Specificity", "FalseAcceptanceRate", "FalseRejectionRate", "HalfTotalErrorRate"]
     classes_params: [

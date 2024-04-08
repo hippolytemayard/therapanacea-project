@@ -4,9 +4,7 @@ from torchmetrics import Metric
 from therapanacea_project.metrics.false_acceptance_rate import (
     FalseAcceptanceRate,
 )
-from therapanacea_project.metrics.false_rejection_rate import (
-    FalseRejectionRate,
-)
+from therapanacea_project.metrics.false_rejection_rate import FalseRejectionRate
 
 
 class HalfTotalErrorRate(Metric):
