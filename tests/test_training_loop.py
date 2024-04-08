@@ -72,26 +72,6 @@ class TestTrainingLoop(unittest.TestCase):
         # Assert that writer methods are called
         writer.add_scalar.assert_called()
 
-    # TODO
-    """
-    def test_training_loop_device(self):
-        # Call the training loop function with GPU device
-
-        self.model.to(self.device)
-        training_loop(
-            model=self.model,
-            loader=self.data_loader,
-            criterion=self.criterion,
-            epoch=0,
-            optimizer=self.optimizer,
-            metrics_collection=self.metrics_collection,
-            device=self.device,
-        )
-
-        # Assert that model is moved to the correct device
-        self.assertEqual(next(self.model.parameters()).device, self.device)
-    """
-
 
 if __name__ == "__main__":
     unittest.main()

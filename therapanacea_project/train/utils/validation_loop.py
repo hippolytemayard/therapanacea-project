@@ -57,7 +57,7 @@ def validation_loop(
         )
 
         if metrics_collection is not None:
-            metrics_collection(prediction, target.long())
+            metrics_collection.update(prediction, target.long())
 
     val_loss /= len(loader)
 

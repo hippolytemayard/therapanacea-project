@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torchmetrics import MetricCollection
 from torchmetrics.classification import Accuracy
 
-from therapanacea_project.train.validation_loop import validation_loop
+from therapanacea_project.train.utils.validation_loop import validation_loop
 
 
 class MockDataset(torch.utils.data.Dataset):

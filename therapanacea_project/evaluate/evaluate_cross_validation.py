@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 
 import pandas as pd
 from omegaconf import OmegaConf
@@ -23,14 +24,14 @@ def cross_val_evaluation_from_config(
     Returns:
         pd.DataFrame: DataFrame containing evaluation metrics for each fold.
     """
-    experiment_model_folder = config.TRAINING.PATH_MODEL
+    experiment_model_folder = Path(config.TRAINING.PATH_MODEL)
     saved_models = list(experiment_model_folder.glob("*.pt"))
 
     list_df_metrics = []
     for saved_model in saved_models:
 
         val_metrics = get_model_evaluation_from_checkpoint(
-            saved_model_path=saved_model
+            config=saved_model, cross_val=True
         )
         val_metrics["fold"] = saved_model.name
 
