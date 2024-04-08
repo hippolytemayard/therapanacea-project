@@ -50,10 +50,10 @@ def cross_val_predict_from_config(
     saved_models = list(saved_models_folder.glob("*.pt"))
 
     model = get_model_architecture(
-        architecture=config.TRAINING.BACKBONE,
-        n_classes=config.TRAINING.DATASET.N_CLASSES,
-        fine_tune=config.TRAINING.FINE_TUNE,
-        pretrained=config.TRAINING.PRETRAINED,
+        architecture=config.INFERENCE.BACKBONE,
+        n_classes=config.INFERENCE.DATASET.N_CLASSES,
+        fine_tune=config.INFERENCE.FINE_TUNE,
+        pretrained=config.INFERENCE.PRETRAINED,
     ).to(device)
 
     k_fold_predictions = []
